@@ -1,5 +1,6 @@
 package com.wusu.wu.mybatis.proxy;
 
+import com.wusu.wu.mybatis.annotation.Param;
 import com.wusu.wu.mybatis.annotation.Select;
 import com.wusu.wu.mybatis.entity.User;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,8 @@ public class MapperProxyFactory {
                 Parameter[] parameters = method.getParameters();
                 for (int i = 0; i < parameters.length; i++) {
                     Parameter parameter = parameters[i];
+                    Param paramAnnotation = parameter.getAnnotation(Param.class);
+                    paramValueMappings.put(paramAnnotation.value(), args[i]);
                     paramValueMappings.put(parameter.getName(), args[i]);
                 }
 
