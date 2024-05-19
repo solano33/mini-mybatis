@@ -16,7 +16,7 @@ public interface UserMapper {
     User selectById(@Param("id") Integer id);
 
     @Select("select * from user where name = #{name} and age = #{age}")
-    List<User> selectBy(@Param("name") String name, @Param("age") String age);
+    List<User> selectBy(@Param("name") String name, @Param("age") Integer age);
 
     @Select("select * from user where name = #{userName}")
     List<User> selectBy(@Param("userName") String name);

@@ -2,23 +2,16 @@ package com.wusu.wu.mybatis.proxy;
 
 import com.wusu.wu.mybatis.annotation.Param;
 import com.wusu.wu.mybatis.annotation.Select;
-import com.wusu.wu.mybatis.entity.User;
-import com.wusu.wu.mybatis.parameter.ParameterTypeFactory;
-import com.wusu.wu.mybatis.parameter.ParameterTypeHandler;
+import com.wusu.wu.mybatis.type.TypeFactory;
+import com.wusu.wu.mybatis.type.TypeHandler;
 import com.wusu.wu.mybatis.parse.GenericTokenParser;
 import com.wusu.wu.mybatis.parse.ParameterMapping;
 import com.wusu.wu.mybatis.parse.handler.ParameterMappingTokenHandler;
 import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author github.com/solano33
@@ -70,7 +63,7 @@ public class MapperProxyFactory {
                     if (value == null) {
                         throw new RuntimeException(String.format("未找到方法形参%s对应的实参", property));
                     }
-                    ParameterTypeHandler typeHandler = ParameterTypeFactory.getTypeHandler(value.getClass());
+                    TypeHandler typeHandler = TypeFactory.getTypeHandler(value.getClass());
                     // 这里注意要使用i+1因为从1开始
                     typeHandler.setParameter(preparedStatement, i + 1, value);
                 }
@@ -79,20 +72,59 @@ public class MapperProxyFactory {
                 preparedStatement.execute();
 
                 // 4. 封装结果
-                List<User> users = new ArrayList<>();
-                ResultSet resultSet = preparedStatement.getResultSet();
-                while (resultSet.next()) {
-                    User user = new User();
-                    user.setId(resultSet.getInt("id"));
-                    user.setName(resultSet.getString("name"));
-                    user.setAge(resultSet.getInt("age"));
-                    users.add(user);
+                Class resultType = null;
+                Type genericReturnType = method.getGenericReturnType();
+                if (genericReturnType instanceof Class) {
+                    // 不是泛型
+                    resultType = (Class) genericReturnType;
+                } else if (genericReturnType instanceof ParameterizedType) {
+                    // 是泛型
+                    Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
+                    resultType = (Class) actualTypeArguments[0];
                 }
-                log.info("users: {}", users);
+
+                List<Object> resultList = new ArrayList<>();
+                ResultSet resultSet = preparedStatement.getResultSet();
+                ResultSetMetaData metaData = resultSet.getMetaData();
+                List<String> columnNames = new ArrayList<>();
+                for (int i = 0; i < metaData.getColumnCount(); i++) {
+                    columnNames.add(metaData.getColumnName(i + 1));
+                }
+
+                Map<String, Method> setterMethodMapping = new HashMap<>();
+                Arrays.stream(resultType.getDeclaredMethods()).filter(e -> e.getName().startsWith("set"))
+                        .forEach(e -> {
+                            String propertyName = e.getName().substring(3);
+                            propertyName = propertyName.substring(0, 1).toLowerCase(Locale.ROOT) +
+                                    propertyName.substring(1);
+                            setterMethodMapping.put(propertyName, e);
+                        });
+
+                while (resultSet.next()) {
+                    Object instance = resultType.newInstance();
+                    for (int i = 0; i < metaData.getColumnCount(); i++) {
+                        String columnName = columnNames.get(i);
+                        log.info("columnName：{}", columnName);
+                        // 通过set方法反射注入
+                        Method setterMethod = setterMethodMapping.get(columnName);
+                        Class<?> parameterType = setterMethod.getParameterTypes()[0];
+                        TypeHandler typeHandler = TypeFactory.getTypeHandler(parameterType);
+                        setterMethod.invoke(instance, typeHandler.getResult(resultSet, columnName));
+                    }
+                    resultList.add(instance);
+                }
+                log.info("users: {}", resultList);
+
+                Object result = null;
+                if (method.getReturnType().equals(List.class)) {
+                    result = resultList;
+                } else {
+                    result = resultList.get(0);
+                }
 
                 // 5. 关闭连接
                 connection.close();
-                return null;
+                return result;
             }
         });
         return (T) proxyInstance;
