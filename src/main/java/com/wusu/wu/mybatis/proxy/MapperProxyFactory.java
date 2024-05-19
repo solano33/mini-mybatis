@@ -3,6 +3,11 @@ package com.wusu.wu.mybatis.proxy;
 import com.wusu.wu.mybatis.annotation.Param;
 import com.wusu.wu.mybatis.annotation.Select;
 import com.wusu.wu.mybatis.entity.User;
+import com.wusu.wu.mybatis.parameter.ParameterTypeFactory;
+import com.wusu.wu.mybatis.parameter.ParameterTypeHandler;
+import com.wusu.wu.mybatis.parse.GenericTokenParser;
+import com.wusu.wu.mybatis.parse.ParameterMapping;
+import com.wusu.wu.mybatis.parse.handler.ParameterMappingTokenHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationHandler;
@@ -51,10 +56,24 @@ public class MapperProxyFactory {
                     paramValueMappings.put(parameter.getName(), args[i]);
                 }
 
-                // TODO: 2024/5/16 通过正则表达式匹配sql中的参数
+                // 解析@Select中设置的sql，将select * from user where id = #{id} 转为select * from user where id = ?
+                ParameterMappingTokenHandler tokenHandler = new ParameterMappingTokenHandler();
+                GenericTokenParser parser = new GenericTokenParser("#{", "}", tokenHandler);
+                String parseSql = parser.parse(sql);
+                List<ParameterMapping> parameterMappings = tokenHandler.getParameterMappings();
+                log.info("解析后的sql为：{}，解析出的参数为：{}", parseSql, parameterMappings);
 
-                PreparedStatement preparedStatement = connection.prepareStatement("select * from user where id = ?");
-                preparedStatement.setInt(1, 1);
+                PreparedStatement preparedStatement = connection.prepareStatement(parseSql);
+                for (int i = 0; i < parameterMappings.size(); i++) {
+                    String property = parameterMappings.get(i).getProperty();
+                    Object value = paramValueMappings.get(property);
+                    if (value == null) {
+                        throw new RuntimeException(String.format("未找到方法形参%s对应的实参", property));
+                    }
+                    ParameterTypeHandler typeHandler = ParameterTypeFactory.getTypeHandler(value.getClass());
+                    // 这里注意要使用i+1因为从1开始
+                    typeHandler.setParameter(preparedStatement, i + 1, value);
+                }
 
                 // 3. 执行查询
                 preparedStatement.execute();
