@@ -119,7 +119,7 @@ public class MapperProxyFactory {
                 if (method.getReturnType().equals(List.class)) {
                     result = resultList;
                 } else {
-                    result = resultList.get(0);
+                    result = resultList.size() == 0 ? null : resultList.get(0);
                 }
 
                 // 5. 关闭连接
