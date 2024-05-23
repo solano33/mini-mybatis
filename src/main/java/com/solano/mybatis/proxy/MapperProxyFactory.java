@@ -1,9 +1,9 @@
-package com.wusu.wu.mybatis.proxy;
+package com.solano.mybatis.proxy;
 
 import com.wusu.wu.mybatis.annotation.Param;
 import com.wusu.wu.mybatis.annotation.Select;
-import com.wusu.wu.mybatis.type.TypeFactory;
-import com.wusu.wu.mybatis.type.TypeHandler;
+import com.solano.mybatis.type.TypeFactory;
+import com.solano.mybatis.type.TypeHandler;
 import com.wusu.wu.mybatis.parse.GenericTokenParser;
 import com.wusu.wu.mybatis.parse.ParameterMapping;
 import com.wusu.wu.mybatis.parse.handler.ParameterMappingTokenHandler;

@@ -1,8 +1,8 @@
-package com.wusu.wu;
+package com.solano;
 
+import com.solano.mybatis.proxy.MapperProxyFactory;
 import com.wusu.wu.mybatis.entity.User;
 import com.wusu.wu.mybatis.mapper.UserMapper;
-import com.wusu.wu.mybatis.proxy.MapperProxyFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;

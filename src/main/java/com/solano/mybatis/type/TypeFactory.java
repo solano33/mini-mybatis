@@ -1,7 +1,7 @@
-package com.wusu.wu.mybatis.type;
+package com.solano.mybatis.type;
 
-import com.wusu.wu.mybatis.type.handler.IntegerTypeHandler;
-import com.wusu.wu.mybatis.type.handler.StringTypeHandler;
+import com.solano.mybatis.type.handler.IntegerTypeHandler;
+import com.solano.mybatis.type.handler.StringTypeHandler;
 
 import java.util.HashMap;
 import java.util.Map;

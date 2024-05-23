@@ -1,6 +1,6 @@
-package com.wusu.wu.mybatis.type.handler;
+package com.solano.mybatis.type.handler;
 
-import com.wusu.wu.mybatis.type.TypeHandler;
+import com.solano.mybatis.type.TypeHandler;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

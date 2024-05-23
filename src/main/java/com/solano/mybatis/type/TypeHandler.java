@@ -1,4 +1,4 @@
-package com.wusu.wu.mybatis.type;
+package com.solano.mybatis.type;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
